@@ -207,8 +207,8 @@
    > **Gate ✓** — from `docker compose down -v && docker compose up -d`, then `npm run seed`, all 3 Playwright specs pass against the freshly started stack
 
 **Exit gate:**
-- [ ] `npx playwright test` — 3/3 specs pass (onboarding, happy-path-transfer, compliance-rejection)
-- [ ] README "Getting Started" followed literally from a clean checkout produces a working demo (PD-4.3)
+- [x] `npx playwright test` — 3/3 specs pass (onboarding, happy-path-transfer, compliance-rejection)
+- [x] README "Getting Started" followed literally from a clean checkout produces a working demo (PD-4.3)
 
 **Anti-gate:** Do not consider the project done if any Playwright spec is flaky (passes intermittently) — fix the root cause before closing Phase 4.
 

@@ -23,10 +23,10 @@ This document is the single reference for what is deliverable and verifiable at 
 | DL-3.2 | Phase 3 - Backend API | N/A | test | Service-layer unit tests | Done |
 | DL-3.3 | Phase 3 - Backend API | N/A | infra | SQLite audit log | Done |
 | DL-3.4 | Phase 3 - Backend API | N/A | infra | `backend-api` container wired into compose | Done |
-| DL-4.1 | Phase 4 - Frontend + E2E | N/A | ui | Admin panel | Planned |
-| DL-4.2 | Phase 4 - Frontend + E2E | N/A | feature | Transfer dashboard | Planned |
-| DL-4.3 | Phase 4 - Frontend + E2E | N/A | test | 3 Playwright E2E specs | Planned |
-| DL-4.4 | Phase 4 - Frontend + E2E | N/A | doc | README verified from a clean checkout | Planned |
+| DL-4.1 | Phase 4 - Frontend + E2E | N/A | ui | Admin panel | Done |
+| DL-4.2 | Phase 4 - Frontend + E2E | N/A | feature | Transfer dashboard | Done |
+| DL-4.3 | Phase 4 - Frontend + E2E | N/A | test | 3 Playwright E2E specs | Done |
+| DL-4.4 | Phase 4 - Frontend + E2E | N/A | doc | README verified from a clean checkout | Done |
 
 ---
 
@@ -378,10 +378,10 @@ Checklist:
 **Prerequisites:**
 ```
 Checklist:
-- [ ] Phase 3 exit gate passed
-- [ ] npm install run inside frontend/
-- [ ] npx playwright install run once (browser binaries)
-- [ ] Full stack running: docker compose up -d
+- [x] Phase 3 exit gate passed
+- [x] npm install run inside frontend/
+- [x] npx playwright install run once (browser binaries)
+- [x] Full stack running: docker compose up -d
 ```
 
 ---
@@ -400,20 +400,19 @@ Checklist:
 
 **How to try it**:
 ```
-1. Open http://localhost:3000 in a browser
-2. Click the "Admin" tab
-3. Select "Anson", click "Register" - expect a success toast "Registered"
-4. Click "Issue Claim" - expect a success toast "Verified"
-5. Enter "100" in the mint amount field, click "Mint" - expect Anson's balance to show "100 DAT"
-6. Repeat for Beatrice
-7. Run: npx playwright test tests/onboarding.spec.ts
+1. Open http://localhost:3000 in a browser (Admin tab is the default view)
+2. On the Anson card, click "Register Anson" - expect inline status "registered"
+3. Click "Issue Claim" - expect inline status "verified"
+4. Enter "100" in the mint amount field, click "Mint" - expect "Balance: 100 DAT" to appear
+5. Repeat steps 2-4 on the Beatrice card
+6. Run: npx playwright test tests/onboarding.spec.ts
    Expect: 1 passed
 ```
 
 **Verification checklist**:
-- [ ] Manual walkthrough above succeeds for both identities
-- [ ] Each action shows success/error feedback in the UI
-- [ ] `npx playwright test tests/onboarding.spec.ts` exits 0
+- [x] Manual walkthrough above succeeds for both identities
+- [x] Each action shows success/error feedback in the UI
+- [x] `npx playwright test tests/onboarding.spec.ts` exits 0
 
 **Known limitations at this phase**: None once verified - this is the terminal deliverable for the onboarding use case (UC-03).
 
@@ -435,11 +434,14 @@ Checklist:
 ```
 1. Open http://localhost:3000, click the "Transfer" tab
 2. In the "Acting as" dropdown, select "Anson" - expect Anson's balance shown (100 DAT if DL-4.1 was completed)
-3. Enter Beatrice's address and "50" as amount, click "Send"
-   Expect Anson's balance drops to 50, Beatrice's balance rises to 50
-4. Scroll to the history table - expect one row showing the transfer just made
-5. Enter an address never registered by Admin, enter "10", click "Send"
-   Expect an inline error message, e.g. "Recipient is not a verified identity" - balances must not change
+3. "Send to" defaults to Beatrice; enter "50" as amount, click "Send"
+   Expect Anson's balance drops by 50, status shows "Transfer sent"
+4. Scroll to the history table - expect a new row for the transfer just made
+5. Select "Admin (unverified)" in "Send to" (Admin is a real identity in this fixed
+   3-identity demo — D-07 — that Admin never onboards as a token holder, so it proves
+   the actual contract-level revert rather than a fabricated address), enter "10",
+   click "Send"
+   Expect an inline error "Token: recipient not verified" - balance and history unchanged
 6. Run: npx playwright test tests/happy-path-transfer.spec.ts
    Expect: 1 passed
 7. Run: npx playwright test tests/compliance-rejection.spec.ts
@@ -447,11 +449,11 @@ Checklist:
 ```
 
 **Verification checklist**:
-- [ ] Identity switch updates the displayed balance correctly
-- [ ] Successful transfer updates both balances and the history table without a full page reload
-- [ ] Rejected transfer shows a clear, human-readable error and leaves balances unchanged
-- [ ] `npx playwright test tests/happy-path-transfer.spec.ts` exits 0
-- [ ] `npx playwright test tests/compliance-rejection.spec.ts` exits 0
+- [x] Identity switch updates the displayed balance correctly
+- [x] Successful transfer updates both balances and the history table without a full page reload
+- [x] Rejected transfer shows a clear, human-readable error and leaves balances unchanged
+- [x] `npx playwright test tests/happy-path-transfer.spec.ts` exits 0
+- [x] `npx playwright test tests/compliance-rejection.spec.ts` exits 0
 
 **Known limitations at this phase**: Identity switch is demo-mode only (D-07) - not a real wallet connection; this is disclaimed in the README, not a bug.
 
@@ -479,8 +481,8 @@ Checklist:
 ```
 
 **Verification checklist**:
-- [ ] `npx playwright test` exits 0 with 3/3 specs passed
-- [ ] Re-run the suite 3 times consecutively with no flaky failures (plan.md anti-gate)
+- [x] `npx playwright test` exits 0 with 3/3 specs passed
+- [x] Re-run the suite 3 times consecutively with no flaky failures (plan.md anti-gate) — run against a genuinely fresh `docker compose down -v && up -d --build && npm run seed`
 
 **Known limitations at this phase**: None - this is the project's final quality gate.
 
@@ -506,15 +508,15 @@ Checklist:
 ```
 
 **Verification checklist**:
-- [ ] Every command in the README "Getting Started" section runs without modification
-- [ ] The quick API test (`curl` for `eth_blockNumber`) returns a valid result
-- [ ] The dashboard loads at `http://localhost:3000` and a transfer can be completed following only the README
+- [x] Every command in the README "Getting Started" section runs without modification
+- [x] The quick API test (`curl` for `eth_blockNumber`) returns a valid result
+- [x] The dashboard loads at `http://localhost:3000` and a transfer can be completed following only the README
 
 **Known limitations at this phase**: None - this closes the project's MVP scope (plan.md §1 v1 wedge).
 
 **Phase exit gate summary** (see plan.md Phase 4 for full detail):
-- [ ] DL-4.1, DL-4.2, DL-4.3, DL-4.4 verified
-- [ ] `npx playwright test` - 3/3 specs pass (onboarding, happy-path-transfer, compliance-rejection); README "Getting Started" followed literally from a clean checkout produces a working demo
+- [x] DL-4.1, DL-4.2, DL-4.3, DL-4.4 verified
+- [x] `npx playwright test` - 3/3 specs pass (onboarding, happy-path-transfer, compliance-rejection); README "Getting Started" followed literally from a clean checkout produces a working demo
 
 ---
 

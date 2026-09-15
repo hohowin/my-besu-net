@@ -35,6 +35,7 @@ function makeChain(transferImpl?: jest.Mock): ChainServiceLike {
     getAddress: (identity) => addresses[identity],
     identityRegistry: () => ({}) as any,
     token: () => ({ transfer, balanceOf }) as any,
+    resetNonce: jest.fn(),
   };
 }
 
@@ -64,5 +65,14 @@ describe("TransferService", () => {
 
     await expect(service.transfer("anson", "beatrice", 50)).rejects.toBeInstanceOf(ComplianceRejectedError);
     expect(auditLog.records).toHaveLength(0);
+  });
+
+  it("resets the sender's nonce cache on a failed send (NonceManager doesn't roll back a failed estimate)", async () => {
+    const failingTransfer = jest.fn().mockRejectedValue({ reason: "Token: recipient not verified" });
+    const chain = makeChain(failingTransfer);
+    const service = new TransferService(chain, makeAuditLog());
+
+    await expect(service.transfer("anson", "beatrice", 50)).rejects.toThrow();
+    expect(chain.resetNonce).toHaveBeenCalledWith("anson");
   });
 });

@@ -10,6 +10,8 @@ function makeChain(overrides: Partial<Record<"identityRegistry" | "token", any>>
   };
 
   const registryDefault = {
+    isRegistered: jest.fn().mockResolvedValue(false),
+    isVerified: jest.fn().mockResolvedValue(false),
     registerIdentity: jest.fn().mockResolvedValue({ wait: jest.fn().mockResolvedValue({}) }),
     issueClaim: jest.fn().mockResolvedValue({ wait: jest.fn().mockResolvedValue({}) }),
   };
@@ -20,8 +22,9 @@ function makeChain(overrides: Partial<Record<"identityRegistry" | "token", any>>
 
   return {
     getAddress: (identity) => addresses[identity],
-    identityRegistry: () => (overrides.identityRegistry ?? registryDefault) as any,
+    identityRegistry: () => ({ ...registryDefault, ...overrides.identityRegistry }) as any,
     token: () => (overrides.token ?? tokenDefault) as any,
+    resetNonce: jest.fn(),
   };
 }
 
@@ -54,6 +57,26 @@ describe("ComplianceAdminService", () => {
     await expect(service.registerIdentity("anson")).resolves.toEqual({ status: "registered" });
   });
 
+  it("skips sending a transaction when already registered/verified", async () => {
+    const registerIdentity = jest.fn();
+    const issueClaim = jest.fn();
+    const chain = makeChain({
+      identityRegistry: {
+        isRegistered: jest.fn().mockResolvedValue(true),
+        isVerified: jest.fn().mockResolvedValue(true),
+        registerIdentity,
+        issueClaim,
+      },
+    });
+    const service = new ComplianceAdminService(chain);
+
+    await service.registerIdentity("anson");
+    await service.issueClaim("anson");
+
+    expect(registerIdentity).not.toHaveBeenCalled();
+    expect(issueClaim).not.toHaveBeenCalled();
+  });
+
   it("converts a chain revert into a ComplianceRejectedError with the readable reason (FR-6)", async () => {
     const chain = makeChain({
       token: {
@@ -64,6 +87,7 @@ describe("ComplianceAdminService", () => {
 
     await expect(service.mint("anson", 100)).rejects.toBeInstanceOf(ComplianceRejectedError);
     await expect(service.mint("anson", 100)).rejects.toThrow("Token: recipient not verified");
+    expect(chain.resetNonce).toHaveBeenCalledWith("admin");
   });
 
   it("rejects issueClaim for an unregistered wallet with a readable reason", async () => {

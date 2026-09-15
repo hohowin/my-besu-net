@@ -29,6 +29,7 @@ export class TransferService {
       const receipt = await tx.wait();
       txHash = receipt.hash;
     } catch (err) {
+      this.chain.resetNonce(from);
       throw toComplianceError(err);
     }
 

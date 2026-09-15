@@ -13,3 +13,10 @@ contracts/typechain-types/
 deployed-addresses.json
 backend-api/dist/
 backend-api/*.db
+frontend/dist/
+
+# Playwright
+test-results/
+playwright-report/
+.playwright-mcp/
+blob-report/

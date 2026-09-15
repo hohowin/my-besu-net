@@ -63,6 +63,16 @@ services:
     networks:
       - besu-net
 
+  frontend:
+    build: ./frontend
+    container_name: frontend
+    depends_on:
+      - backend-api
+    ports:
+      - "3000:80"
+    networks:
+      - besu-net
+
 networks:
   besu-net:
     driver: bridge

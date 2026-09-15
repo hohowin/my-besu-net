@@ -57,13 +57,20 @@ cd my-besu-net
 # 2. Configure env
 cp .env.example .env.local
 # fill in demo private keys / addresses for Admin, Anson, Beatrice
+# (generate throwaway ones with: node -e "console.log(require('ethers').Wallet.createRandom())")
 
-# 3. Start the network + services
+# 3. Install dependencies used by the seed script
+cd contracts && npm install && cd ..
+npm install   # root — only needed if you'll also run the Playwright E2E suite
+
+# 4. Start the network + services (also builds the backend-api/frontend images)
 docker compose up -d
 
-# 4. Seed identities and mint tokens (Admin onboarding, one-time)
+# 5. Deploy contracts, onboard Anson/Beatrice, and mint a starting balance
 npm run seed
 ```
+
+Besu has no persistent volume for chain data (by design — see `docs/plan.md` D-15/D-16), so every `docker compose down` resets it to genesis. `npm run seed` always redeploys fresh contracts and restarts `backend-api` to pick up the new addresses — safe to re-run any time after a teardown.
 
 ## Accessing the Application
 
@@ -94,8 +101,9 @@ curl -X POST http://localhost:8545 \
 ## Development Notes
 
 - Solo repo — commits go directly to `main`, no CI workflow (see `docs/plan.md` for rationale).
-- Run `npm run typecheck` and `npm run test` locally before considering a phase done.
-- Admin setup actions are also reachable via CLI scripts in `scripts/` for scripting/debugging without the UI.
+- Run `npm run typecheck` and `npm run test` locally (inside each of `contracts/`, `backend-api/`, `frontend/`) before considering a phase done.
+- Admin setup actions are also reachable via CLI scripts in `contracts/scripts/` for scripting/debugging without the UI.
+- End-to-end tests: `npx playwright test` from the repo root (needs the full stack already running — see `docs/deliverables.md` DL-4.3).
 
 ## Compliance Notes
 
