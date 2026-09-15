@@ -190,6 +190,7 @@ npx playwright show-report   # view the HTML report
 | [docs/plan.md](docs/plan.md) | Phase plan, locked decisions, risk register |
 | [docs/use-cases.md](docs/use-cases.md) | End-to-end flows with sequence diagrams |
 | [docs/deliverables.md](docs/deliverables.md) | Phase-by-phase deliverables and "how to try it" guides |
+| [docs/kaleido-mock.md](docs/kaleido-mock.md) | Optional demo mode: a local mimic of Kaleido's ABI-gateway + async-receipt pattern in front of Besu |
 
 ## Development Notes
 

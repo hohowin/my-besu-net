@@ -24,6 +24,8 @@ Also added: `ComplianceAdminService.registerIdentity`/`issueClaim` now check `is
 
 All phases are done; project is at MVP scope per `docs/plan.md` §1 v1 wedge — see §10 Out of Scope for what's deliberately not built.
 
+**Optional addition (post-MVP, not part of the locked Phase 1-4 plan): `kaleido-mock/`.** A local mimic of Kaleido's core pattern (generic ABI-driven REST gateway + async submit/receipt-polling), sitting between `backend-api` and `besu-rpc` as an alternative to `backend-api`'s direct ethers.js transport. Toggled via `CHAIN_TRANSPORT` env var + `docker-compose.kaleido.yml` override — `docker compose up -d` alone is unaffected. `ComplianceAdminService`/`TransferService`/the REST routes/the frontend are all unchanged between the two modes (verified: same 3 Playwright specs pass against both). See `docs/kaleido-mock.md`.
+
 ## Repo Layout (current)
 
 ```
@@ -37,12 +39,19 @@ contracts/               # Phase 2: Hardhat + TS strict project
   scripts/                # deploy.ts + admin CLI (registerIdentity/issueClaim/mintToken/transfer)
   test/compliance.test.ts # 10 tests incl. compliance-rejection anti-gate
 backend-api/             # Phase 3: Express + TS strict project
-  src/chain/ChainService.ts    # the only module holding private keys (D-09)
+  src/chain/ChainService.ts        # direct-ethers transport, holds private keys (D-09)
+  src/chain/KaleidoChainService.ts # optional HTTP transport -> kaleido-mock (see below)
   src/services/                # ComplianceAdminService, TransferService
   src/db/AuditLogRepository.ts # node:sqlite-backed transfers log
   src/api/                     # Express routes + error handler
-  test/services/                # 8 tests, mocked ChainService
+  test/services/                # 10 tests, mocked ChainService
   Dockerfile
+kaleido-mock/            # Optional (post-MVP): local Kaleido-pattern mimic — see docs/kaleido-mock.md
+  src/routes.ts           # generic ABI-driven gateway (GET/POST /contracts/:instance/:method)
+  src/receipts.ts         # async submit + receipt-polling store
+  src/chain.ts            # holds keys in this mode instead of backend-api
+  Dockerfile
+docker-compose.kaleido.yml # override: docker compose -f docker-compose.yml -f docker-compose.kaleido.yml up -d --build
 docs/
   prd.md                 # product requirements, user stories
   architecture.md         # service architecture, integration patterns, security model
