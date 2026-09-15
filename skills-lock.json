@@ -31,6 +31,18 @@
       "skillPath": "skills/emil-design-eng/SKILL.md",
       "computedHash": "ac3fc5b4e206488ffc408a2806f829bb2e5eaf518fded09be34790685c2b3a0d"
     },
+    "ethereum": {
+      "source": "mindrally/skills",
+      "sourceType": "github",
+      "skillPath": "ethereum/SKILL.md",
+      "computedHash": "1a05a5073b8d68c90cea62baa8984c0ab06e13b86d0a32c0b32753e1c864a147"
+    },
+    "express-production": {
+      "source": "bobmatnyc/claude-mpm-skills",
+      "sourceType": "github",
+      "skillPath": "toolchains/javascript/frameworks/express-production/SKILL.md",
+      "computedHash": "06ebc6ad61ad43626b6f9d0dc7997f3ce0c640c8169ab105a211ad6ec3afeda8"
+    },
     "full-output-enforcement": {
       "source": "Leonxlnx/taste-skill",
       "sourceType": "github",
