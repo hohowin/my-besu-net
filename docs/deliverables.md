@@ -19,10 +19,10 @@ This document is the single reference for what is deliverable and verifiable at 
 | DL-2.1 | Phase 2 - Contracts | N/A | infra | Deployed trimmed T-REX suite | Done |
 | DL-2.2 | Phase 2 - Contracts | N/A | api | Admin CLI scripts | Done |
 | DL-2.3 | Phase 2 - Contracts | N/A | test | Hardhat compliance test suite | Done |
-| DL-3.1 | Phase 3 - Backend API | N/A | api | 6 REST endpoints | Planned |
-| DL-3.2 | Phase 3 - Backend API | N/A | test | Service-layer unit tests | Planned |
-| DL-3.3 | Phase 3 - Backend API | N/A | infra | SQLite audit log | Planned |
-| DL-3.4 | Phase 3 - Backend API | N/A | infra | `backend-api` container wired into compose | Planned |
+| DL-3.1 | Phase 3 - Backend API | N/A | api | 6 REST endpoints | Done |
+| DL-3.2 | Phase 3 - Backend API | N/A | test | Service-layer unit tests | Done |
+| DL-3.3 | Phase 3 - Backend API | N/A | infra | SQLite audit log | Done |
+| DL-3.4 | Phase 3 - Backend API | N/A | infra | `backend-api` container wired into compose | Done |
 | DL-4.1 | Phase 4 - Frontend + E2E | N/A | ui | Admin panel | Planned |
 | DL-4.2 | Phase 4 - Frontend + E2E | N/A | feature | Transfer dashboard | Planned |
 | DL-4.3 | Phase 4 - Frontend + E2E | N/A | test | 3 Playwright E2E specs | Planned |
@@ -243,7 +243,7 @@ scripts, so args are passed as env vars instead of the originally planned
 Checklist:
 - [ ] Phase 2 exit gate passed, deployed-addresses.json exists
 - [ ] .env.local populated with ADMIN_PRIVATE_KEY, ANSON_PRIVATE_KEY, BEATRICE_PRIVATE_KEY, BESU_RPC_URL=http://localhost:8545
-- [ ] npm install run inside backend/
+- [ ] npm install run inside backend-api/
 ```
 
 ---
@@ -277,9 +277,9 @@ Checklist:
 ```
 
 **Verification checklist**:
-- [ ] All 6 endpoints return the expected shape above
-- [ ] No response body anywhere contains a private key or raw signer data (spot-check with `curl -v` and read the full body)
-- [ ] Typecheck passes: `npm run typecheck`
+- [x] All 6 endpoints return the expected shape above
+- [x] No response body anywhere contains a private key or raw signer data (spot-check with `curl -v` and read the full body)
+- [x] Typecheck passes: `npm run typecheck`
 
 **Known limitations at this phase**: No auth on any route (documented accepted risk R5) - safe only because bound to localhost. No UI yet - resolved by DL-4.1/DL-4.2.
 
@@ -304,9 +304,9 @@ Checklist:
 ```
 
 **Verification checklist**:
-- [ ] All service-layer tests pass
-- [ ] Idempotent `registerIdentity` (calling twice) is explicitly covered and passes
-- [ ] Compliance-rejection error path is explicitly covered and passes
+- [x] All service-layer tests pass
+- [x] Idempotent `registerIdentity` (calling twice) is explicitly covered and passes
+- [x] Compliance-rejection error path is explicitly covered and passes
 
 **Known limitations at this phase**: Mocked `ChainService` - these tests do not prove the real chain integration works; DL-3.1's manual `curl` walkthrough covers that.
 
@@ -320,20 +320,20 @@ Checklist:
 | **Phase** | Phase 3 - Backend API |
 | **Milestone** | N/A |
 | **Traces to** | PRD US-006, FR-7, plan.md PD-3.3 |
-| **Demo surface** | `sqlite3 backend/transfers.db` |
+| **Demo surface** | `sqlite3 backend-api/transfers.db` |
 
-**What it is**: The local, file-based audit log that records every successful transfer (`from`, `to`, `amount`, `txHash`, `timestamp`).
+**What it is**: The local, file-based audit log that records every successful transfer (`from`, `to`, `amount`, `txHash`, `timestamp`). Implemented with Node's built-in `node:sqlite` (`DatabaseSync`) rather than `better-sqlite3` — the latter needs a native C++ toolchain (node-gyp) to compile on this machine, which isn't installed; `node:sqlite` ships with Node itself (stable target Node 20 LTS per D-04, but this repo runs Node 24 locally where it works without flags) and needs no native build. Still a plain `.db` file, so `sqlite3 backend-api/transfers.db` works unchanged.
 
 **How to try it**:
 ```
-1. After completing DL-3.1 step 6 (a successful transfer), run: sqlite3 backend/transfers.db "select * from transfers"
+1. After completing DL-3.1 step 6 (a successful transfer), run: sqlite3 backend-api/transfers.db "select * from transfers"
 2. Expect one row: anson | beatrice | 50 | 0x... | <timestamp>
 ```
 
 **Verification checklist**:
-- [ ] `transfers.db` file exists after the backend starts
-- [ ] A row is written after a successful `/transfer` call
-- [ ] No row is written after a failed/reverted `/transfer` call
+- [x] `transfers.db` file exists after the backend starts
+- [x] A row is written after a successful `/transfer` call
+- [x] No row is written after a failed/reverted `/transfer` call
 
 **Known limitations at this phase**: No UI to view this table yet - resolved by DL-4.2 (history table).
 
@@ -360,14 +360,14 @@ Checklist:
 ```
 
 **Verification checklist**:
-- [ ] `backend-api` container healthy in `docker compose ps`
-- [ ] All DL-3.1 curl checks still pass against the containerized backend
+- [x] `backend-api` container healthy in `docker compose ps`
+- [x] All DL-3.1 curl checks still pass against the containerized backend
 
 **Known limitations at this phase**: None - this closes out Phase 3.
 
 **Phase exit gate summary** (see plan.md Phase 3 for full detail):
-- [ ] DL-3.1, DL-3.2, DL-3.3, DL-3.4 verified
-- [ ] All 6 endpoints manually verified via curl against the full Phase 1+2+3 stack; service-layer unit tests green; spot-check confirms no private key ever appears in a response body
+- [x] DL-3.1, DL-3.2, DL-3.3, DL-3.4 verified
+- [x] All 6 endpoints manually verified via curl against the full Phase 1+2+3 stack; service-layer unit tests green; spot-check confirms no private key ever appears in a response body
 
 ---
 

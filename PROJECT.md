@@ -12,7 +12,9 @@ Solo learning PoC: a permissioned ERC-3643 (T-REX) digital asset (`DAT`) transfe
 
 **Phase 2 (Contracts) — done.** Trimmed T-REX suite (6 contracts) deployed and verified live on the Phase 1 network: `npx hardhat test` 10/10 green including both compliance-rejection anti-gate tests; admin CLI register→claim→mint→transfer walkthrough run end to end for Anson and Beatrice; a transfer to a never-onboarded address reverts on-chain with `Token: recipient not verified` (see `docs/plan.md` §4 Phase 2 exit gate, all checked).
 
-**Phases 3–4 (Backend API, Frontend + E2E) — not started.**
+**Phase 3 (Backend API) — done.** Express backend (`backend-api/`) exposes all 6 REST endpoints, backed by `ChainService`/`ComplianceAdminService`/`TransferService`/`AuditLogRepository`. 8/8 service-layer unit tests green (mocked `ChainService`), all endpoints manually verified via curl both locally and containerized — including the compliance-rejection path returning a clean 400, and confirmed no private key ever appears in a response body (see `docs/plan.md` §4 Phase 3 exit gate, all checked). Deviation: uses Node's built-in `node:sqlite` instead of `better-sqlite3` — no C++ toolchain available locally to compile it.
+
+**Phase 4 (Frontend + E2E) — not started.**
 
 Phases are strictly sequential with hard exit gates (D-14) — see `docs/plan.md` §4 for the full gate checklist before starting the next phase.
 
@@ -28,6 +30,13 @@ contracts/               # Phase 2: Hardhat + TS strict project
   contracts/              # trimmed T-REX suite (6 .sol files, incl. compliance/)
   scripts/                # deploy.ts + admin CLI (registerIdentity/issueClaim/mintToken/transfer)
   test/compliance.test.ts # 10 tests incl. compliance-rejection anti-gate
+backend-api/             # Phase 3: Express + TS strict project
+  src/chain/ChainService.ts    # the only module holding private keys (D-09)
+  src/services/                # ComplianceAdminService, TransferService
+  src/db/AuditLogRepository.ts # node:sqlite-backed transfers log
+  src/api/                     # Express routes + error handler
+  test/services/                # 8 tests, mocked ChainService
+  Dockerfile
 docs/
   prd.md                 # product requirements, user stories
   architecture.md         # service architecture, integration patterns, security model
@@ -41,7 +50,6 @@ CLAUDE.md / PERSONA.md / PROJECT.md   # agent operating instructions
 ```
 
 **Planned additions (per phase, not yet created):**
-- Phase 3 → `backend-api/` (Express + ethers.js + TS strict; `ChainService`, `ComplianceAdminService`, `TransferService`, `AuditLogRepository`; SQLite `transfers.db`)
 - Phase 4 → `frontend/` (React + Vite; `AdminPanel`, `TransferDashboard`, `ApiClient`); `tests/` (Playwright specs: `onboarding`, `happy-path-transfer`, `compliance-rejection`)
 
 ## Architecture (summary)
@@ -61,7 +69,7 @@ Modular monolith backend + thin SPA + 2-node blockchain infra tier — 4 Docker 
 - **Language/runtime:** TypeScript strict, Node.js 20 LTS. No JS.
 - **Contracts:** Solidity + Hardhat.
 - **Chain client:** ethers.js.
-- **DB:** SQLite, no ORM (`better-sqlite3`, direct queries) — single `transfers` table.
+- **DB:** SQLite, no ORM, single `transfers` table — `node:sqlite` (`DatabaseSync`), not `better-sqlite3` (no native C++ toolchain available locally to compile it).
 - **Naming:** avoid hardcoding `anson`/`beatrice`/`DAT` into logic — model as generic `identity` and `asset` records even though only one instance of each exists in v1 (see `docs/plan.md` §2).
 - **Layering:** API layer (Express routes) stays a thin adapter — no chain calls, no SQL, no business invariants directly in route handlers. Invariants (e.g. "claim requires prior registration") live in the owning service (`ComplianceAdminService`, `TransferService`).
 - **Secrets:** `.env.local`, gitignored, never logged or returned in API responses.
@@ -97,12 +105,23 @@ WALLET=<addr> AMOUNT=<n> npx hardhat run scripts/mintToken.ts --network besu
 FROM=<addr> TO=<addr> AMOUNT=<n> npx hardhat run scripts/transfer.ts --network besu
 ```
 
-**Planned (from Phase 3 onward, once a root `package.json` exists):**
+**Now (Phase 3, run inside `backend-api/`):**
 ```bash
+npm install
 npm run typecheck
-npm run test -- --testPathPattern=<file>
-npm run seed                      # one-time admin onboarding + mint
-npx playwright test               # Phase 4: 3 E2E specs
+npm run test                      # 8 tests, mocked ChainService
+npm run dev                       # starts backend-api on :4000 (needs deployed-addresses.json + .env.local)
+
+# or containerized (from repo root):
+docker compose up -d --build backend-api
+
+curl -X POST http://localhost:4000/admin/register-identity -H "Content-Type: application/json" -d '{"who":"anson"}'
+curl http://localhost:4000/balance/anson
+```
+
+**Planned (Phase 4):**
+```bash
+npx playwright test               # 3 E2E specs
 ```
 
 ## Verification Before Calling a Phase Done
@@ -110,7 +129,7 @@ npx playwright test               # Phase 4: 3 E2E specs
 Each phase has an explicit exit gate in `docs/plan.md` §4 — check it literally, don't eyeball it:
 - Phase 1: both containers healthy/peered, `eth_blockNumber` increasing, `eth_gasPrice` = `0x0`
 - Phase 2: `npx hardhat test` green including compliance-rejection revert test; admin CLI register→claim→mint works end to end
-- Phase 3: all 6 REST endpoints manually verified via curl; zero private-key leakage in any response
+- Phase 3: all 6 REST endpoints manually verified via curl (done, both local and containerized); zero private-key leakage in any response (done)
 - Phase 4: 3/3 Playwright specs green across 3 consecutive local runs (non-flaky)
 
 ## Related Artifacts

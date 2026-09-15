@@ -289,7 +289,7 @@ graph TD
 | HTTP framework | Express |
 | Contract dev/deploy | Solidity + Hardhat |
 | Chain client | ethers.js |
-| DB | SQLite (file-based, no ORM — direct `better-sqlite3` queries; schema is one table) |
+| DB | SQLite (file-based, no ORM — direct `node:sqlite` (`DatabaseSync`) queries; schema is one table). Switched from `better-sqlite3` during Phase 3 — it needs a native C++ toolchain to compile that wasn't available locally; `node:sqlite` ships with Node itself, no native build |
 | Frontend | React + Vite |
 | Observability | Console/structured logs only (pino, post-MVP) |
 | Secrets management | `.env.local` (gitignored) — demo private keys and contract addresses |

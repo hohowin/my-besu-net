@@ -11,3 +11,5 @@ contracts/typechain-types/
 # Secrets and local-only deploy artifacts
 .env.local
 deployed-addresses.json
+backend-api/dist/
+backend-api/*.db

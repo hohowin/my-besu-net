@@ -177,9 +177,9 @@
    > **Gate ✓** — `docker compose up -d backend-api` starts healthy and reaches `besu-rpc` over the internal Docker network
 
 **Exit gate:**
-- [ ] All 6 endpoints manually verified via `curl` against the full Phase 1+2+3 stack
-- [ ] Service-layer unit tests green
-- [ ] Spot-check confirms no private key ever appears in a response body
+- [x] All 6 endpoints manually verified via `curl` against the full Phase 1+2+3 stack
+- [x] Service-layer unit tests green
+- [x] Spot-check confirms no private key ever appears in a response body
 
 **Anti-gate:** Do not proceed to Phase 4 if any endpoint returns a private key or raw signer data — this breaks FR-8 outright.
 

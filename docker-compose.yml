@@ -44,9 +44,31 @@ services:
     networks:
       - besu-net
 
+  backend-api:
+    build: ./backend-api
+    container_name: backend-api
+    depends_on:
+      - besu-rpc
+    env_file:
+      - ./.env.local
+    environment:
+      - BESU_RPC_URL=http://besu-rpc:8545
+      - DEPLOYED_ADDRESSES_PATH=/app/deployed-addresses.json
+      - DB_PATH=/app/data/transfers.db
+    volumes:
+      - ./deployed-addresses.json:/app/deployed-addresses.json:ro
+      - backend-data:/app/data
+    ports:
+      - "4000:4000"
+    networks:
+      - besu-net
+
 networks:
   besu-net:
     driver: bridge
     ipam:
       config:
         - subnet: 172.28.0.0/16
+
+volumes:
+  backend-data:
