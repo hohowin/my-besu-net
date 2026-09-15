@@ -544,3 +544,37 @@ npm run seed
 ```bash
 docker compose down -v
 ```
+
+---
+
+## Post-MVP Addendum: Kaleido-Mimic Transport
+
+> Not a phase, not tracked against the overview table above, not gated by any exit gate — added after Phase 4 closed. Full detail: [docs/kaleido-mock.md](kaleido-mock.md), [docs/architecture.md](architecture.md) §14.
+
+**What it is**: An alternate backend chain transport (`kaleido-mock`, a new service) that mimics the pattern a platform like Kaleido uses — a generic ABI-driven REST gateway with async submission + receipt polling, holding the signing keys itself instead of `backend-api`. Demonstrates that swapping `ChainService` for `KaleidoChainService` behind the already-existing `ChainServiceLike` interface changes nothing observable in the frontend, the REST contract, or the Playwright specs.
+
+**How to try it**:
+```
+1. Complete the base "How to Run a Full End-to-End Demo" above at least once (contracts deployed, .env.local filled in).
+2. Run: docker compose -f docker-compose.yml -f docker-compose.kaleido.yml up -d --build
+   Adds kaleido-mock (:5001); overrides backend-api's CHAIN_TRANSPORT to "kaleido".
+3. Run: docker logs backend-api --tail 5
+   Expect: "chain transport: kaleido"
+4. Open http://localhost:3000 — identical UI and behavior to the default mode.
+5. Run: npx playwright test
+   Expect: 3/3 pass, same specs, unmodified.
+6. Try the gateway directly:
+   curl "http://localhost:5001/contracts/identityRegistry/isVerified?params=%5B%22<address>%22%5D"
+   curl -X POST http://localhost:5001/contracts/token/mint -H "Content-Type: application/json" -d '{"params":["<address>",10],"from":"admin"}'
+   curl http://localhost:5001/receipts/<id-from-previous-response>
+7. Return to the default mode: docker compose -f docker-compose.yml -f docker-compose.kaleido.yml down && docker compose up -d --build && npm run seed
+```
+
+**Verification checklist**:
+- [x] `backend-api` logs confirm `chain transport: kaleido`
+- [x] Dashboard behaves identically — same balances, same transfer flow, same compliance-rejection message
+- [x] `npx playwright test` — 3/3 pass against this transport, no test changes
+- [x] A write call (mint/transfer) visibly takes longer (~5s vs ~2-3s) — the async receipt-polling trade-off made observable
+- [x] A compliance-rejection (e.g. mint to an unverified identity) fails synchronously (~0.1s, 400) since it reverts during gas estimation before any transaction is ever broadcast — no receipt is ever created for it
+
+**Known limitations**: `kaleido-mock`'s receipt store is in-memory only (lost on restart); no auth (same posture as the rest of this demo, D-19); not a spec-compliant clone of Kaleido's real API.

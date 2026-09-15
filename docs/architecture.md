@@ -377,3 +377,72 @@ graph TD
 - [docs/plan.md](plan.md) — phase plan, decision log (D-01–D-17), risk register
 - [docs/use-cases.md](use-cases.md) — end-to-end flows with sequence diagrams
 - [docs/deliverables.md](deliverables.md) — phase-by-phase deliverables and "how to try it" guides
+- [docs/kaleido-mock.md](kaleido-mock.md) — §14 below, in more detail
+
+---
+
+## §14 Addendum: Optional Kaleido-Mimic Transport (Post-MVP)
+
+> Not part of the locked architecture in §1–§13, not a phase in `docs/plan.md` §4, and not gated by any decision D-01–D-24. Added afterward to demonstrate a different transport between the application and Besu — everything above this section remains the accurate description of the default, tested stack (`docker compose up -d`). Full detail: [docs/kaleido-mock.md](kaleido-mock.md).
+
+**What changes:** `backend-api`'s `ChainService` (direct ethers.js, holds keys, D-09) gets a sibling, `KaleidoChainService`, that talks over HTTP to a new service, `kaleido-mock`, which holds the keys instead and exposes a generic ABI-driven REST gateway with async submission + receipt polling — the pattern that distinguishes a platform like Kaleido from a plain RPC wrapper. Selected via `CHAIN_TRANSPORT` env var; brought up via the `docker-compose.kaleido.yml` override, not a change to `docker-compose.yml`.
+
+**What doesn't change:** `ComplianceAdminService`, `TransferService`, `AuditLogRepository`, all 6 REST routes, and the entire `frontend` — none of them know or care which transport is behind `ChainServiceLike`. This is the point being demonstrated: chain transport was already an interface boundary (§6's per-module rationale for `ChainService` — "key handling must live in exactly one place"), so swapping it out is a pure addition, not a modification, to the modules above. Verified by running the same 3 Playwright specs (§11) unmodified against both transports.
+
+**Updated topology (this mode only):**
+
+```mermaid
+graph TD
+    Admin[Admin - browser]
+    Anson[Anson - browser]
+    Beatrice[Beatrice - browser]
+
+    subgraph Frontend["frontend (SPA, :3000) — unchanged"]
+        AdminPanel[AdminPanel]
+        TransferUI[TransferDashboard]
+        ApiClient[ApiClient]
+    end
+
+    subgraph Backend["backend-api (:4000) — unchanged business logic"]
+        API[API Layer]
+        Chain[KaleidoChainService]
+        CAS[ComplianceAdminService]
+        TS[TransferService]
+        Audit[AuditLogRepository]
+    end
+
+    SQLite[(SQLite transfers.db)]
+
+    subgraph Gateway["kaleido-mock (:5001) — NEW, holds keys in this mode"]
+        Routes["Generic ABI gateway<br/>/contracts/:instance/:method"]
+        Receipts["Receipt store<br/>(async submit + poll)"]
+    end
+
+    subgraph BesuNet["Besu network (QBFT, zero-gas) — unchanged"]
+        RPC[besu-rpc :8545/:8546]
+        Validator[besu-validator]
+        Contracts[T-REX contract suite]
+    end
+
+    Admin --> AdminPanel
+    Anson --> TransferUI
+    Beatrice --> TransferUI
+    AdminPanel --> ApiClient
+    TransferUI --> ApiClient
+    ApiClient -- Sync REST --> API
+    API --> CAS
+    API --> TS
+    CAS --> Chain
+    TS --> Chain
+    TS --> Audit
+    Audit --> SQLite
+    Chain -- "HTTP: submit + poll receipt" --> Routes
+    Routes --> Receipts
+    Routes -- JSON-RPC --> RPC
+    RPC -- p2p/QBFT --> Validator
+    RPC --> Contracts
+```
+
+**Trade-off made visible:** a write action takes noticeably longer in this mode (~5s vs ~2-3s), a direct, observable consequence of `kaleido-mock`'s 1-second receipt-polling interval — async submission trades latency for not blocking the request thread on confirmation, which is exactly the trade-off a real platform like Kaleido makes at scale.
+
+**Nonce-management pitfall recurs by design, not by accident:** `kaleido-mock` independently needed the same `ethers.NonceManager` + reset-on-failure fix as `backend-api`'s `ChainService` (§9's tech stack notes don't mention this because it surfaced during Phase 4 E2E testing, after §9 was written) — confirming it's inherent to "one process signs for multiple identities and submits transactions," not a one-off bug in a single module.

@@ -28,6 +28,8 @@ This document is the single reference for end-to-end interaction flows.
 
 No external systems are involved - this is a fully local system (D-15, D-21, D-23).
 
+> **Post-MVP addendum (UC-07 below):** adds one more actor, `kaleido-mock`, an optional alternate transport for `ChainService`'s role — not part of the locked actor set above. See [kaleido-mock.md](kaleido-mock.md).
+
 ---
 
 ## UC-01: Developer Stands Up the Besu Network
@@ -323,3 +325,59 @@ sequenceDiagram
 - Basic listing is MVP (PRD US-011); client-side filtering is Post-MVP (FR-11, not yet built).
 - Depends on D-10/D-11 (SQLite audit log is the source for this view, not a live chain event scan).
 - Playwright coverage: implicitly exercised as part of `tests/happy-path-transfer.spec.ts` (asserting the history table updates after a send), per D-13's acceptance criteria for US-006. No dedicated spec file - flagged here as optional test backlog if history-view regressions become a concern on their own.
+
+---
+
+## UC-07 (Post-MVP Addendum): Anson Pays Beatrice via the Kaleido-Mimic Transport
+
+> Not part of the locked MVP flows above (UC-01–UC-06) - added after Phase 4 closed, to demonstrate an alternate transport. See [kaleido-mock.md](kaleido-mock.md), [architecture.md](architecture.md) S14.
+
+**Goal:** Same outcome as UC-04 (balance moves, audit log records it) but routed through `kaleido-mock`'s generic ABI gateway with async submission + receipt polling, instead of `ChainService` signing and broadcasting directly.
+
+**Trigger:** Same as UC-04 - Anson enters an amount and clicks Send. The stack is running with the `docker-compose.kaleido.yml` override active (`CHAIN_TRANSPORT=kaleido`).
+
+```mermaid
+sequenceDiagram
+    actor Anson
+    participant FE as Frontend TransferDashboard
+    participant API as API Layer
+    participant TS as TransferService
+    participant Chain as KaleidoChainService
+    participant GW as kaleido-mock gateway
+    participant Contracts as T-REX Contracts
+    participant Audit as AuditLogRepository
+    participant DB as SQLite transfers table
+
+    Note over Anson,DB: Same UI, same REST contract as UC-04 - only the Chain/GW hop differs
+
+    Anson->>FE: select acting as Anson, enter amount 100, click Send
+    FE->>API: POST /transfer, from anson, to beatrice, amount 100
+    API->>TS: transfer(anson, beatriceAddress, 100)
+    TS->>Chain: token(anson).transfer(beatriceAddress, 100)
+    Chain->>GW: POST /contracts/token/transfer, params, from anson
+    GW->>Contracts: transfer(beatriceAddress, 100)
+    Contracts-->>GW: tx broadcast, hash known, not yet mined
+    GW-->>Chain: 202, id = txHash, status submitted
+    Chain->>GW: poll GET /receipts/:id (~1s interval)
+    GW->>Contracts: tx.wait() in background
+    Contracts-->>GW: mined, status success
+    GW-->>Chain: status success, transactionHash
+    Chain-->>TS: resolved, same shape as a direct ethers TransactionResponse
+
+    TS->>Audit: recordTransfer(anson, beatrice, 100, txHash)
+    Audit->>DB: insert row
+    DB-->>Audit: row saved
+    Audit-->>TS: logged
+
+    TS-->>API: success, new balances
+    API-->>FE: 200 OK, anson 0 DAT, beatrice 100 DAT
+    FE-->>Anson: balances updated, transfer shows in history
+
+    Note over TS,GW: Same 200 response shape as UC-04 - TransferService never knows which transport ran
+```
+
+**Notes:**
+- Everything from `API Layer` down through `Audit`/`DB` is byte-for-byte the same code path as UC-04 - only `Chain`'s implementation and the new `GW` hop differ.
+- Observable difference: end-to-end latency is higher (~5s vs ~2-3s for UC-04), from the receipt-polling interval - this is the async-transport trade-off made visible, not a regression.
+- The compliance-rejection equivalent of UC-05 fails *faster* in this mode (~0.1s): the revert happens during `eth_estimateGas`, before `GW` ever broadcasts a transaction, so it returns a synchronous 400 with no receipt ever created - see `kaleido-mock.md` for why.
+- Playwright coverage: the same `tests/happy-path-transfer.spec.ts` from UC-04 passes unmodified against this transport - no dedicated spec, since the point is that the test shouldn't need to know the difference.
