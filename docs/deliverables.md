@@ -16,9 +16,9 @@ This document is the single reference for what is deliverable and verifiable at 
 |---|---|---|---|---|---|
 | DL-1.1 | Phase 1 - Network | M1.1 | infra | QBFT genesis config | Done |
 | DL-1.2 | Phase 1 - Network | M1.2 | infra | Peered validator + RPC network | Done |
-| DL-2.1 | Phase 2 - Contracts | N/A | infra | Deployed trimmed T-REX suite | Planned |
-| DL-2.2 | Phase 2 - Contracts | N/A | api | Admin CLI scripts | Planned |
-| DL-2.3 | Phase 2 - Contracts | N/A | test | Hardhat compliance test suite | Planned |
+| DL-2.1 | Phase 2 - Contracts | N/A | infra | Deployed trimmed T-REX suite | Done |
+| DL-2.2 | Phase 2 - Contracts | N/A | api | Admin CLI scripts | Done |
+| DL-2.3 | Phase 2 - Contracts | N/A | test | Hardhat compliance test suite | Done |
 | DL-3.1 | Phase 3 - Backend API | N/A | api | 6 REST endpoints | Planned |
 | DL-3.2 | Phase 3 - Backend API | N/A | test | Service-layer unit tests | Planned |
 | DL-3.3 | Phase 3 - Backend API | N/A | infra | SQLite audit log | Planned |
@@ -178,14 +178,18 @@ Checklist:
 
 **How to try it**:
 ```
-1. Run: npx hardhat run scripts/registerIdentity.ts --network besu -- 0xAnsonAddress
+Note: Hardhat 2.x's `run` task does not support `--` positional passthrough to
+scripts, so args are passed as env vars instead of the originally planned
+`-- <arg>` syntax.
+
+1. Run: WALLET=0xAnsonAddress npx hardhat run scripts/registerIdentity.ts --network besu
    Expect console output "registered: 0xAnsonAddress"
-2. Run: npx hardhat run scripts/issueClaim.ts --network besu -- 0xAnsonAddress
+2. Run: WALLET=0xAnsonAddress npx hardhat run scripts/issueClaim.ts --network besu
    Expect console output "claim issued: 0xAnsonAddress"
-3. Run: npx hardhat run scripts/mintToken.ts --network besu -- 0xAnsonAddress 100
+3. Run: WALLET=0xAnsonAddress AMOUNT=100 npx hardhat run scripts/mintToken.ts --network besu
    Expect console output "minted 100 DAT to 0xAnsonAddress"
-4. Repeat steps 1-3 for Beatrice's address
-5. Run: npx hardhat run scripts/transfer.ts --network besu -- 0xAnsonAddress 0xBeatriceAddress 50
+4. Repeat steps 1-3 for Beatrice's address (skip the mint if Beatrice only needs to be verified)
+5. Run: FROM=0xAnsonAddress TO=0xBeatriceAddress AMOUNT=50 npx hardhat run scripts/transfer.ts --network besu
    Expect console output "transferred 50 DAT, tx: 0x..."
 ```
 

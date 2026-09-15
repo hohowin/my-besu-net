@@ -144,9 +144,9 @@
    > **Gate ✓** — `npx hardhat test` is green, including a test asserting `transfer()` reverts for an unverified recipient and succeeds for a verified one
 
 **Exit gate:**
-- [ ] `npx hardhat test` green, including the compliance-rejection test
-- [ ] Admin CLI scripts run register → claim → mint end to end against the live Phase 1 network
-- [ ] `deployed-addresses.json` available for Phase 3 to consume
+- [x] `npx hardhat test` green, including the compliance-rejection test
+- [x] Admin CLI scripts run register → claim → mint end to end against the live Phase 1 network
+- [x] `deployed-addresses.json` available for Phase 3 to consume
 
 **Anti-gate:** Do not proceed to Phase 3 if the compliance-rejection test does not actually revert — that would mean D-01's core guarantee isn't real.
 
