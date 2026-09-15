@@ -17,8 +17,10 @@ A single-validator, single-RPC-node Hyperledger Besu network (QBFT, zero-gas) ru
 | Actor | Role | Interacts via |
 |---|---|---|
 | **Admin** | Token Agent + Trusted Issuer — registers identities, issues KYC claims, mints `DAT` | Web dashboard (Admin panel) |
-| **Anson** | Verified investor — sends `DAT` | Web dashboard (demo-mode identity switch) |
-| **Beatrice** | Verified investor — receives `DAT` | Web dashboard (demo-mode identity switch) |
+| **Anson** | Verified investor — sends and receives `DAT` | Web dashboard (demo-mode identity switch) |
+| **Beatrice** | Verified investor — sends and receives `DAT` | Web dashboard (demo-mode identity switch) |
+
+Transfers work in both directions — Anson → Beatrice and Beatrice → Anson — once both are onboarded and verified. Switch "Acting as" on the Transfer tab to send from whichever identity you're currently driving.
 
 There is no real wallet software involved — the dashboard has a "currently acting as" selector instead of a MetaMask connection, and the backend signs transactions on the selected identity's behalf.
 
@@ -49,28 +51,70 @@ Token: `Digital Asset Token` (`DAT`) — trimmed T-REX contracts: `Token`, `Iden
 
 ## Getting Started
 
+### Step 1 — Clone and configure
+
 ```bash
-# 1. Clone
 git clone <this-repo>
 cd my-besu-net
-
-# 2. Configure env
 cp .env.example .env.local
-# fill in demo private keys / addresses for Admin, Anson, Beatrice
-# (generate throwaway ones with: node -e "console.log(require('ethers').Wallet.createRandom())")
+```
 
-# 3. Install dependencies used by the seed script
-cd contracts && npm install && cd ..
-npm install   # root — only needed if you'll also run the Playwright E2E suite
+Open `.env.local` and fill in three throwaway private keys / addresses (Admin, Anson, Beatrice). These sign real transactions on the local network, but it's zero-gas and never leaves your machine, so any freshly generated key is fine — never reuse a key that holds real funds anywhere else:
 
-# 4. Start the network + services (also builds the backend-api/frontend images)
-docker compose up -d
+```bash
+node -e "
+const { ethers } = require('ethers');
+for (const name of ['ADMIN','ANSON','BEATRICE']) {
+  const w = ethers.Wallet.createRandom();
+  console.log(name + '_PRIVATE_KEY=' + w.privateKey);
+  console.log(name + '_ADDRESS=' + w.address);
+}
+"
+```
 
-# 5. Deploy contracts, onboard Anson/Beatrice, and mint a starting balance
+(This needs the `ethers` package — either run it from inside `contracts/` after step 2 below, or `npm install ethers` in a scratch folder first.)
+
+### Step 2 — Install dependencies
+
+```bash
+cd contracts && npm install && cd ..   # needed for the seed script's contract deploy
+npm install                            # root — only needed for the Playwright E2E suite
+npx playwright install chromium        # once, only if you'll run the E2E suite
+```
+
+`backend-api/` and `frontend/` don't need a local `npm install` for the normal flow below — Docker installs their dependencies inside the image build.
+
+### Step 3 — Start the stack
+
+```bash
+docker compose up -d --build
+```
+
+This builds and starts all 4 containers: `besu-validator`, `besu-rpc`, `backend-api`, `frontend`. Check they're all healthy:
+
+```bash
+docker compose ps
+```
+
+### Step 4 — Deploy contracts and onboard the demo identities
+
+```bash
 npm run seed
 ```
 
-Besu has no persistent volume for chain data (by design — see `docs/plan.md` D-15/D-16), so every `docker compose down` resets it to genesis. `npm run seed` always redeploys fresh contracts and restarts `backend-api` to pick up the new addresses — safe to re-run any time after a teardown.
+This deploys the trimmed T-REX contract suite fresh, restarts `backend-api` so it picks up the new contract addresses, then registers + verifies both Anson and Beatrice and mints Anson a starting balance of 1000 `DAT`. Takes about 15–20 seconds.
+
+> Besu has no persistent volume for chain data (by design — see `docs/plan.md` D-15/D-16), so every `docker compose down` resets the chain back to genesis. `npm run seed` always redeploys fresh contracts rather than trusting a possibly-stale `deployed-addresses.json` — safe to re-run any time after a teardown.
+
+### Step 5 — Open the dashboard
+
+Go to **http://localhost:3000** — see [Demo Walkthrough](#demo-walkthrough) below for what to click.
+
+### Tearing down
+
+```bash
+docker compose down -v   # stops everything and wipes the chain + audit log
+```
 
 ## Accessing the Application
 
@@ -86,6 +130,55 @@ Quick API test:
 curl -X POST http://localhost:8545 \
   -H "Content-Type: application/json" \
   -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'
+```
+
+## Demo Walkthrough
+
+Everything below assumes the stack is up and `npm run seed` has already run (Anson has 1000 `DAT`, Beatrice has 0 but is verified).
+
+### 1. Admin panel — onboard identities (if you skipped `npm run seed`, or want to see it manually)
+
+1. Open http://localhost:3000 — the **Admin** tab is the default view, with a card for Anson and a card for Beatrice.
+2. On a card, click **Register \<Name\>** — status shows `registered`.
+3. Click **Issue Claim** — status shows `verified`. The identity can now hold and transfer `DAT`.
+4. Enter an amount and click **Mint** — status shows `minted` and the card displays the new balance.
+
+These steps are idempotent — clicking Register/Issue Claim again on an already-onboarded identity just confirms the status again, no error.
+
+### 2. Transfer tab — send `DAT` either direction
+
+1. Click the **Transfer** tab.
+2. **Acting as** — choose who you're sending from: **Anson** or **Beatrice**. Their live balance appears underneath.
+3. **Send to** — choose the recipient. This list automatically excludes whoever you're currently acting as, so if you're acting as Anson you'll see Beatrice (and Admin); switch **Acting as** to Beatrice and **Send to** will offer Anson instead — **Beatrice can send to Anson exactly the same way Anson can send to Beatrice**, since both are verified identities.
+4. Enter an amount, click **Send**.
+5. On success: the balance updates, status shows "Transfer sent", and a new row appears in the **Transfer history** table below.
+
+### 3. Compliance rejection — see the actual contract guarantee fail closed
+
+1. Still on the Transfer tab, set **Send to** to **Admin (unverified)** — Admin is a real identity in this demo but is deliberately never onboarded as a token holder.
+2. Enter an amount, click **Send**.
+3. Expect an inline error: `Token: recipient not verified`. The balance and history table are unchanged — nothing was silently swallowed, and nothing on-chain moved either (this reverts inside the smart contract itself, not just a frontend check).
+
+### 4. Confirm it from the terminal too
+
+```bash
+# Chain is live
+curl -s -X POST http://localhost:8545 -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"eth_blockNumber","params":[],"id":1}'
+
+# Backend agrees with the chain
+curl -s http://localhost:4000/balance/anson
+curl -s http://localhost:4000/balance/beatrice
+
+# Full audit log of every transfer made through the dashboard
+curl -s http://localhost:4000/transfers
+```
+
+### 5. Run the automated proof
+
+```bash
+npx playwright test          # 3 specs: onboarding, happy-path-transfer, compliance-rejection
+npx playwright show-report   # view the HTML report
 ```
 
 ## Key Documents
