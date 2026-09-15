@@ -108,9 +108,9 @@
    > **Gate ✓** — `eth_gasPrice` returns `0x0`
 
 **Exit gate (= Phase 1 exit gate):**
-- [ ] Both containers healthy and peered
-- [ ] `eth_blockNumber` increases over time (QBFT producing blocks)
-- [ ] `eth_gasPrice` returns `0x0`
+- [x] Both containers healthy and peered
+- [x] `eth_blockNumber` increases over time (QBFT producing blocks)
+- [x] `eth_gasPrice` returns `0x0`
 
 **Anti-gate:** If `besu-rpc` cannot peer with `besu-validator` after fixing `static-nodes.json`/networking, do not proceed to Phase 2 — the whole stack depends on a live chain.
 

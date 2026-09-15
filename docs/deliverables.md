@@ -14,8 +14,8 @@ This document is the single reference for what is deliverable and verifiable at 
 
 | DL-ID | Phase | Milestone | Type | Deliverable | Status |
 |---|---|---|---|---|---|
-| DL-1.1 | Phase 1 - Network | M1.1 | infra | QBFT genesis config | Planned |
-| DL-1.2 | Phase 1 - Network | M1.2 | infra | Peered validator + RPC network | Planned |
+| DL-1.1 | Phase 1 - Network | M1.1 | infra | QBFT genesis config | Done |
+| DL-1.2 | Phase 1 - Network | M1.2 | infra | Peered validator + RPC network | Done |
 | DL-2.1 | Phase 2 - Contracts | N/A | infra | Deployed trimmed T-REX suite | Planned |
 | DL-2.2 | Phase 2 - Contracts | N/A | api | Admin CLI scripts | Planned |
 | DL-2.3 | Phase 2 - Contracts | N/A | test | Hardhat compliance test suite | Planned |
@@ -58,9 +58,14 @@ Checklist:
 
 **How to try it**:
 ```
-1. Run: besu operator generate-blockchain-config --config-file=network-config/qbft-config.json --output-dir=network-config/out --private-key-file-name=key
+1. Run: docker run --rm --user 1000:1000 -v "$(pwd)/network-config:/data" hyperledger/besu:latest operator generate-blockchain-config --config-file=/data/qbft-config.json --to=/data/out --private-key-file-name=key
+   Note: --user 1000:1000 is required - the official Besu image's entrypoint runs a root-only
+   permission-fixing pre-pass that creates the --to directory as a side effect, which then makes
+   the real command fail with "Output directory already exists". Running as a non-root user skips
+   that pre-pass entirely.
 2. Inspect network-config/out/genesis.json
 3. Confirm it contains a "qbft" block under "config" and the validator address appears in "extraData"
+4. Copy genesis.json to network-config/genesis.json and the generated key file to network-config/validator-key/key (this is the layout docker-compose.yml expects)
 ```
 
 **Verification checklist**:

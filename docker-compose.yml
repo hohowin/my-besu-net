@@ -1,0 +1,52 @@
+services:
+  besu-validator:
+    image: hyperledger/besu:latest
+    container_name: besu-validator
+    user: "1000:1000"
+    volumes:
+      - ./network-config/genesis.json:/data/genesis.json:ro
+      - ./network-config/validator-key/key:/data/key:ro
+    command:
+      - --genesis-file=/data/genesis.json
+      - --node-private-key-file=/data/key
+      - --min-gas-price=0
+      - --host-allowlist=*
+      - --rpc-http-enabled
+      - --rpc-http-host=0.0.0.0
+      - --rpc-http-cors-origins=*
+      - --p2p-host=0.0.0.0
+    networks:
+      besu-net:
+        ipv4_address: 172.28.0.10
+
+  besu-rpc:
+    image: hyperledger/besu:latest
+    container_name: besu-rpc
+    user: "1000:1000"
+    depends_on:
+      - besu-validator
+    volumes:
+      - ./network-config/genesis.json:/data/genesis.json:ro
+    command:
+      - --genesis-file=/data/genesis.json
+      - --min-gas-price=0
+      - --host-allowlist=*
+      - --rpc-http-enabled
+      - --rpc-http-host=0.0.0.0
+      - --rpc-http-cors-origins=*
+      - --rpc-ws-enabled
+      - --rpc-ws-host=0.0.0.0
+      - --p2p-host=0.0.0.0
+      - --bootnodes=enode://cb5c4b284f13a9c2ffd669010a1bdfcc6de470b940d79ad1d74e1b65c24a0915d4cd2e2d31a52943d66876699f9c40e42597da5d9cd115438f499e578265e28f@172.28.0.10:30303
+    ports:
+      - "8545:8545"
+      - "8546:8546"
+    networks:
+      - besu-net
+
+networks:
+  besu-net:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.28.0.0/16
