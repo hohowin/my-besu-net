@@ -181,6 +181,38 @@ npx playwright test          # 3 specs: onboarding, happy-path-transfer, complia
 npx playwright show-report   # view the HTML report
 ```
 
+## Optional: Kaleido-Mimic Transport
+
+> Post-MVP addition, not part of the core phase plan — full detail in [docs/kaleido-mock.md](docs/kaleido-mock.md).
+
+[Kaleido](https://www.kaleido.io) is a commercial blockchain-platform-as-a-service; its free tier is a hosted cloud account, not something installable locally. `kaleido-mock/` is a small service built for this repo that reproduces Kaleido's *pattern* instead — a generic, ABI-driven REST gateway with async submission + receipt polling, holding the signing keys itself rather than `backend-api`.
+
+```bash
+# Requires the base stack already deployed once (see Getting Started above)
+docker compose -f docker-compose.yml -f docker-compose.kaleido.yml up -d --build
+
+docker logs backend-api --tail 5   # confirm: "chain transport: kaleido"
+```
+
+The dashboard at `http://localhost:3000` behaves identically — same UI, same `npx playwright test` specs pass unmodified. The only visible difference is slightly higher latency per write action (~5s vs ~2-3s), from the gateway's 1-second receipt-polling interval.
+
+Try the gateway directly:
+
+```bash
+curl "http://localhost:5001/contracts/identityRegistry/isVerified?params=%5B%22<address>%22%5D"
+curl -X POST http://localhost:5001/contracts/token/mint \
+  -H "Content-Type: application/json" -d '{"params":["<address>",10],"from":"admin"}'
+curl http://localhost:5001/receipts/<id-from-previous-response>
+```
+
+Back to the default (direct) transport:
+
+```bash
+docker compose -f docker-compose.yml -f docker-compose.kaleido.yml down
+docker compose up -d --build
+npm run seed
+```
+
 ## Key Documents
 
 | Document | Purpose |
