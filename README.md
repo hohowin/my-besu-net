@@ -84,7 +84,30 @@ npx playwright install chromium        # once, only if you'll run the E2E suite
 
 `backend-api/` and `frontend/` don't need a local `npm install` for the normal flow below — Docker installs their dependencies inside the image build.
 
-### Step 3 — Start the stack
+### Step 3 — Generate the validator's network identity
+
+`network-config/genesis.json` and `network-config/validator-key/` are gitignored and generated fresh per clone — each local devnet gets its own disposable validator identity rather than everyone sharing one baked into the repo (`network-config/qbft-config.json` is the committed, identity-independent template this derives from):
+
+```bash
+docker run --rm --user 1000:1000 -v "$(pwd)/network-config:/data" hyperledger/besu:latest \
+  operator generate-blockchain-config --config-file=/data/qbft-config.json --to=/data/out --private-key-file-name=key
+```
+
+> On Windows Git Bash, prefix with `MSYS_NO_PATHCONV=1` — otherwise the `/data/...` paths get mangled into Windows paths before reaching the container.
+
+Then move the output into the layout `docker-compose.yml` expects:
+
+```bash
+mkdir -p network-config/validator-key
+addr=$(ls network-config/out/keys)
+cp network-config/out/genesis.json network-config/genesis.json
+cp "network-config/out/keys/$addr/key" network-config/validator-key/key
+cp "network-config/out/keys/$addr/key.pub" network-config/validator-key/key.pub
+echo "$addr" > network-config/validator-key/address.txt
+rm -rf network-config/out
+```
+
+### Step 4 — Start the stack
 
 ```bash
 docker compose up -d --build
@@ -96,7 +119,7 @@ This builds and starts all 4 containers: `besu-validator`, `besu-rpc`, `backend-
 docker compose ps
 ```
 
-### Step 4 — Deploy contracts and onboard the demo identities
+### Step 5 — Deploy contracts and onboard the demo identities
 
 ```bash
 npm run seed
@@ -104,9 +127,9 @@ npm run seed
 
 This deploys the trimmed T-REX contract suite fresh, restarts `backend-api` so it picks up the new contract addresses, then registers + verifies both Anson and Beatrice and mints Anson a starting balance of 1000 `DAT`. Takes about 15–20 seconds.
 
-> Besu has no persistent volume for chain data (by design — see `docs/plan.md` D-15/D-16), so every `docker compose down` resets the chain back to genesis. `npm run seed` always redeploys fresh contracts rather than trusting a possibly-stale `deployed-addresses.json` — safe to re-run any time after a teardown.
+> Besu has no persistent volume for chain *data* (by design — see `docs/plan.md` D-15/D-16), so every `docker compose down` resets it back to genesis — but the *files* from Step 3 (`genesis.json`, `validator-key/`) stay on disk and don't need regenerating unless you delete them yourself. `npm run seed` always redeploys fresh contracts rather than trusting a possibly-stale `deployed-addresses.json` — safe to re-run any time after a teardown.
 
-### Step 5 — Open the dashboard
+### Step 6 — Open the dashboard
 
 Go to **http://localhost:3000** — see [Demo Walkthrough](#demo-walkthrough) below for what to click.
 

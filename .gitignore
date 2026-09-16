@@ -15,6 +15,14 @@ backend-api/dist/
 backend-api/*.db
 frontend/dist/
 
+# Generated per-clone from network-config/qbft-config.json (identity-
+# independent template, safe to commit) — genesis.json embeds the
+# validator's derived address, and validator-key/key is its actual private
+# key. Never commit a real one; see README Getting Started to generate.
+network-config/genesis.json
+network-config/validator-key/
+network-config/out/
+
 # Playwright
 test-results/
 playwright-report/

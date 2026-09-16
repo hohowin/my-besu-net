@@ -92,3 +92,4 @@ npm run seed
 **Doesn't show:**
 - Real Kaleido's actual API shape, auth model, or any of its production features (webhooks, event streams, multi-region, HSM-backed signing, etc.) — this is a minimal illustrative mimic, not a spec-compliant clone.
 - Production readiness — `kaleido-mock`'s receipt store is in-memory only (state is lost on restart), and it inherits the same "no auth" posture as the rest of this demo (D-19).
+- A reduction in key-custody risk — this mode *relocates* all three private keys (admin/anson/beatrice) from `backend-api` to `kaleido-mock`, it doesn't split, rotate, or otherwise reduce their concentration. Compromising `kaleido-mock` grants exactly the same total control that compromising `backend-api` does in the default mode (`docs/architecture.md` §10's single-point-of-custody risk applies unchanged, just to a different process).

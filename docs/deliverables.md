@@ -54,7 +54,7 @@ Checklist:
 | **Traces to** | PRD US-001, plan.md M1.1 |
 | **Demo surface** | Files on disk under `network-config/` |
 
-**What it is**: The generated QBFT genesis file and validator key that every other deliverable in this project depends on.
+**What it is**: The generated QBFT genesis file and validator key that every other deliverable in this project depends on. `network-config/qbft-config.json` is the committed, identity-independent template; `genesis.json` and `validator-key/` are its generated output, gitignored, and regenerated fresh per clone — nobody's local devnet reuses another clone's validator identity (a real validator private key was briefly committed early in this project's history and has since been rotated out and gitignored; the lesson is encoded here rather than repeated).
 
 **How to try it**:
 ```
@@ -63,15 +63,18 @@ Checklist:
    permission-fixing pre-pass that creates the --to directory as a side effect, which then makes
    the real command fail with "Output directory already exists". Running as a non-root user skips
    that pre-pass entirely.
+   On Windows Git Bash: prefix with MSYS_NO_PATHCONV=1, otherwise the /data/... paths get
+   silently rewritten to Windows paths before reaching the container and the command fails
+   with "Unmatched arguments".
 2. Inspect network-config/out/genesis.json
 3. Confirm it contains a "qbft" block under "config" and the validator address appears in "extraData"
 4. Copy genesis.json to network-config/genesis.json and the generated key file to network-config/validator-key/key (this is the layout docker-compose.yml expects)
 ```
 
 **Verification checklist**:
-- [ ] `network-config/out/genesis.json` exists
-- [ ] `genesis.json` contains a `qbft` config block
-- [ ] `docker compose config` exits 0 once `docker-compose.yml` references the genesis file
+- [x] `network-config/out/genesis.json` exists
+- [x] `genesis.json` contains a `qbft` config block
+- [x] `docker compose config` exits 0 once `docker-compose.yml` references the genesis file
 
 **Known limitations at this phase**: No container is running yet - this is config generation only. Resolved by DL-1.2.
 

@@ -30,9 +30,9 @@ All phases are done; project is at MVP scope per `docs/plan.md` §1 v1 wedge —
 
 ```
 network-config/
-  genesis.json          # QBFT genesis, minGasPrice = 0
-  qbft-config.json
-  validator-key/        # validator private key (gitignored contents)
+  genesis.json          # QBFT genesis, minGasPrice = 0 — gitignored, generated per clone (see README Getting Started Step 3)
+  qbft-config.json       # identity-independent template — this one IS committed
+  validator-key/        # validator private key — gitignored, generated per clone (a real one was briefly committed early on and has since been rotated + gitignored)
 docker-compose.yml       # besu-validator + besu-rpc (Phase 1 only so far)
 contracts/               # Phase 2: Hardhat + TS strict project
   contracts/              # trimmed T-REX suite (6 .sol files, incl. compliance/)
