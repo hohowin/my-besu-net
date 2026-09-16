@@ -304,4 +304,4 @@
 - [docs/architecture.md](architecture.md) — service architecture, integration patterns, security model
 - [docs/use-cases.md](use-cases.md) — end-to-end flows with sequence diagrams
 - [docs/deliverables.md](deliverables.md) — phase-by-phase deliverables and "how to try it" guides
-- [docs/kaleido-mock.md](kaleido-mock.md) — optional post-MVP addition (not a phase, not gated by any decision above): an alternate chain transport, added after this plan's phases were already complete
+- [docs/chain-gateway.md](chain-gateway.md) — optional post-MVP addition (not a phase, not gated by any decision above): an alternate chain transport, added after this plan's phases were already complete

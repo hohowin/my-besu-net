@@ -1,7 +1,7 @@
 import * as dotenv from "dotenv";
 import * as path from "path";
 import { ChainService, ChainServiceLike, loadPrivateKeysFromEnv } from "./chain/ChainService";
-import { KaleidoChainService, loadWalletAddressesFromEnv } from "./chain/KaleidoChainService";
+import { GatewayChainService, loadWalletAddressesFromEnv } from "./chain/GatewayChainService";
 import { ComplianceAdminService } from "./services/ComplianceAdminService";
 import { TransferService } from "./services/TransferService";
 import { AuditLogRepository } from "./db/AuditLogRepository";
@@ -19,17 +19,17 @@ const DB_PATH = process.env.DB_PATH ?? path.join(__dirname, "..", "transfers.db"
 
 // "direct" (default): this process holds keys and talks to besu-rpc via
 // ethers.js directly (D-09, the documented Phase 1-4 architecture).
-// "kaleido": routes through kaleido-mock instead — a local mimic of
-// Kaleido's generic ABI-gateway + async-receipt pattern (see
-// kaleido-mock/, docker-compose.kaleido.yml). Everything downstream of
-// ChainServiceLike (ComplianceAdminService, TransferService, the 6 REST
-// routes) is identical either way; only the transport changes.
+// "gateway": routes through chain-gateway instead — a generic ABI-driven
+// REST gateway with an async-receipt pattern (see chain-gateway/,
+// docker-compose.gateway.yml). Everything downstream of ChainServiceLike
+// (ComplianceAdminService, TransferService, the 6 REST routes) is
+// identical either way; only the transport changes.
 const CHAIN_TRANSPORT = process.env.CHAIN_TRANSPORT ?? "direct";
 
 const chain: ChainServiceLike =
-  CHAIN_TRANSPORT === "kaleido"
-    ? new KaleidoChainService(
-        process.env.KALEIDO_GATEWAY_URL ?? "http://localhost:5001",
+  CHAIN_TRANSPORT === "gateway"
+    ? new GatewayChainService(
+        process.env.CHAIN_GATEWAY_URL ?? "http://localhost:5001",
         loadWalletAddressesFromEnv(process.env),
       )
     : new ChainService(RPC_URL, loadPrivateKeysFromEnv(process.env), DEPLOYED_ADDRESSES_PATH);

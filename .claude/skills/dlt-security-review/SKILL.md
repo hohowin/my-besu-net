@@ -1,7 +1,7 @@
 ---
 name: dlt-security-review
 description: Review DLT/blockchain code — Solidity contracts and any backend code that signs or submits transactions — against a structured taxonomy of known attack patterns across the consensus, smart-contract, network/P2P, key-management, and economic/governance layers. Trigger with "security review the contracts", "audit the smart contracts", "check for DLT attack patterns", "review this for blockchain vulnerabilities", or when reviewing changes to *.sol files, ChainService-shaped modules, or anything that handles a private key.
-argument-hint: "[file or directory to review — defaults to contracts/, backend-api/src/chain/, kaleido-mock/src/chain.ts, or equivalent chain-facing code]"
+argument-hint: "[file or directory to review — defaults to contracts/, backend-api/src/chain/, chain-gateway/src/chain.ts, or equivalent chain-facing code]"
 ---
 
 # /dlt-security-review

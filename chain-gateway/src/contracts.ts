@@ -1,8 +1,9 @@
 /// The two contracts this demo's application layer actually calls. A real
-/// Kaleido gateway introspects whatever ABI you give it — this mimic does
-/// the same (see gateway.ts's use of ethers.Interface.getFunction(...)
-/// .stateMutability to decide GET-vs-POST), it just only has these two
-/// registered because that's all the app needs.
+/// platform-as-a-service gateway introspects whatever ABI you give it —
+/// this one does the same (see routes.ts's use of
+/// ethers.Interface.getFunction(...).stateMutability to decide
+/// GET-vs-POST), it just only has these two registered because that's all
+/// the app needs.
 export const CONTRACTS = {
   identityRegistry: [
     "function registerIdentity(address wallet)",

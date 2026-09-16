@@ -33,8 +33,8 @@ async function pollReceipt(gatewayUrl: string, id: string, tries = 60, delayMs =
   throw new Error(`Receipt ${id} did not resolve after ${tries} attempts`);
 }
 
-/// A "contract" here is a thin proxy over the kaleido-mock gateway's
-/// generic REST surface, not a real ethers.Contract — but it's duck-typed
+/// A "contract" here is a thin proxy over chain-gateway's generic REST
+/// surface, not a real ethers.Contract — but it's duck-typed
 /// to match exactly how ComplianceAdminService/TransferService already use
 /// one: `await c.someMethod(...)` for a view call resolves straight to the
 /// value; for a write call it resolves to `{ hash, wait() }`, same shape as
@@ -75,13 +75,13 @@ function createContractProxy(gatewayUrl: string, instance: ContractInstance, fro
 }
 
 /// Same ChainServiceLike surface as the direct-ethers ChainService, but
-/// this one holds no private keys at all — kaleido-mock does (see its
+/// this one holds no private keys at all — chain-gateway does (see its
 /// chain.ts). The application layer (this service, ComplianceAdminService,
 /// TransferService, AuditLogRepository) is unchanged either way; only the
-/// transport to Besu differs. Selected via CHAIN_TRANSPORT=kaleido
-/// (see index.ts) — see docker-compose.kaleido.yml for the override that
-/// brings kaleido-mock online and points this at it.
-export class KaleidoChainService implements ChainServiceLike {
+/// transport to Besu differs. Selected via CHAIN_TRANSPORT=gateway
+/// (see index.ts) — see docker-compose.gateway.yml for the override that
+/// brings chain-gateway online and points this at it.
+export class GatewayChainService implements ChainServiceLike {
   constructor(
     private readonly gatewayUrl: string,
     private readonly walletAddresses: Record<Identity, string>,
@@ -100,13 +100,13 @@ export class KaleidoChainService implements ChainServiceLike {
   }
 
   resetNonce(): void {
-    // Nonce management now lives entirely inside kaleido-mock, which holds
+    // Nonce management now lives entirely inside chain-gateway, which holds
     // the keys and does the actual signing/submission — nothing to reset
     // on this side of the REST boundary.
   }
 }
 
-/// The mimic gateway signs on the application's behalf, but this process
+/// The gateway signs on the application's behalf, but this process
 /// still needs to know each identity's *address* (not its key) to build
 /// request bodies and to answer GET /balance/:who — addresses aren't
 /// secret, so reading them from the same .env.local is fine.

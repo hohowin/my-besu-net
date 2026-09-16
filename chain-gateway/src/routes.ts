@@ -11,12 +11,12 @@ function serializeOutput(value: unknown): unknown {
   return value;
 }
 
-/// The generic contract gateway — this is the actual "Kaleido pattern"
-/// being demonstrated. Nothing here knows what "registering an identity"
-/// or "minting" means; it only knows how to read an ABI and turn any
-/// method into a REST call. All app-specific meaning stays in
-/// backend-api's ComplianceAdminService/TransferService, same as it would
-/// with a real Kaleido gateway.
+/// The generic contract gateway — this is the actual pattern being
+/// demonstrated. Nothing here knows what "registering an identity" or
+/// "minting" means; it only knows how to read an ABI and turn any method
+/// into a REST call. All app-specific meaning stays in backend-api's
+/// ComplianceAdminService/TransferService, same as it would with a real
+/// platform-as-a-service gateway.
 export function createRouter(chain: ChainRegistry, receipts: ReceiptStore): Router {
   const router = Router();
 
@@ -75,7 +75,7 @@ export function createRouter(chain: ChainRegistry, receipts: ReceiptStore): Rout
       } catch (err) {
         // Reverted during gas estimation — nothing was ever broadcast, so
         // there's no receipt to poll. Fail the request synchronously,
-        // matching how Kaleido itself rejects a call it can't even submit.
+        // matching how a real gateway rejects a call it can't even submit.
         chain.resetNonce(from);
         return res.status(400).json({ error: describeError(err) });
       }

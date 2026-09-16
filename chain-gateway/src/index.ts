@@ -23,5 +23,5 @@ app.use(createRouter(chain, receipts));
 app.use(errorHandler);
 
 app.listen(PORT, () => {
-  console.log(`kaleido-mock gateway listening on :${PORT}`);
+  console.log(`chain-gateway listening on :${PORT}`);
 });

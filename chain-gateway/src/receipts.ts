@@ -8,14 +8,14 @@ export interface Receipt {
   error?: string;
 }
 
-/// The defining Kaleido pattern this mimic exists to demonstrate: a write
-/// call doesn't block on confirmation. It returns a receipt id immediately
-/// (id = the transaction hash, once broadcast — already a unique on-chain
-/// reference, so no separate id scheme is needed), and the caller polls
-/// GET /receipts/:id until it settles. In-memory only: this is a demo
-/// middleware, not a durable job queue, and state resets with the process
-/// (consistent with Besu itself having no persistent volume here either —
-/// see docker-compose.kaleido.yml / D-15/D-16).
+/// The defining async-gateway pattern this service exists to demonstrate:
+/// a write call doesn't block on confirmation. It returns a receipt id
+/// immediately (id = the transaction hash, once broadcast — already a
+/// unique on-chain reference, so no separate id scheme is needed), and the
+/// caller polls GET /receipts/:id until it settles. In-memory only: this
+/// is a demo middleware, not a durable job queue, and state resets with
+/// the process (consistent with Besu itself having no persistent volume
+/// here either — see docker-compose.gateway.yml / D-15/D-16).
 export class ReceiptStore {
   private readonly receipts = new Map<string, Receipt>();
 

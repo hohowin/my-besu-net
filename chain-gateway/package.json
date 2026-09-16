@@ -1,8 +1,8 @@
 {
-  "name": "besu-digital-asset-demo-kaleido-mock",
+  "name": "besu-digital-asset-demo-chain-gateway",
   "version": "0.1.0",
   "private": true,
-  "description": "Local mimic of Kaleido's core pattern: a generic ABI-driven REST gateway (auto-exposes contract methods as endpoints) with async submit + receipt-polling, sitting between the application and Besu. Not a Kaleido product or affiliated with Kaleido — built to demonstrate the pattern without an external account.",
+  "description": "A generic ABI-driven REST gateway (auto-exposes contract methods as endpoints) with async submit + receipt-polling, sitting between the application and Besu — the pattern used by commercial blockchain-platform-as-a-service offerings, reproduced locally so it can be demonstrated without an external account.",
   "main": "src/index.ts",
   "scripts": {
     "dev": "ts-node src/index.ts",

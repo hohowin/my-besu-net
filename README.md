@@ -204,17 +204,17 @@ npx playwright test          # 3 specs: onboarding, happy-path-transfer, complia
 npx playwright show-report   # view the HTML report
 ```
 
-## Optional: Kaleido-Mimic Transport
+## Optional: Chain Gateway Transport
 
-> Post-MVP addition, not part of the core phase plan — full detail in [docs/kaleido-mock.md](docs/kaleido-mock.md).
+> Post-MVP addition, not part of the core phase plan — full detail in [docs/chain-gateway.md](docs/chain-gateway.md).
 
-[Kaleido](https://www.kaleido.io) is a commercial blockchain-platform-as-a-service; its free tier is a hosted cloud account, not something installable locally. `kaleido-mock/` is a small service built for this repo that reproduces Kaleido's *pattern* instead — a generic, ABI-driven REST gateway with async submission + receipt polling, holding the signing keys itself rather than `backend-api`.
+Commercial blockchain-platform-as-a-service offerings typically aren't installable locally — their free tiers are hosted cloud accounts, not something you `docker run`. `chain-gateway/` is a small service built for this repo that reproduces the *pattern* those platforms share instead — a generic, ABI-driven REST gateway with async submission + receipt polling, holding the signing keys itself rather than `backend-api`.
 
 ```bash
 # Requires the base stack already deployed once (see Getting Started above)
-docker compose -f docker-compose.yml -f docker-compose.kaleido.yml up -d --build
+docker compose -f docker-compose.yml -f docker-compose.gateway.yml up -d --build
 
-docker logs backend-api --tail 5   # confirm: "chain transport: kaleido"
+docker logs backend-api --tail 5   # confirm: "chain transport: gateway"
 ```
 
 The dashboard at `http://localhost:3000` behaves identically — same UI, same `npx playwright test` specs pass unmodified. The only visible difference is slightly higher latency per write action (~5s vs ~2-3s), from the gateway's 1-second receipt-polling interval.
@@ -231,7 +231,7 @@ curl http://localhost:5001/receipts/<id-from-previous-response>
 Back to the default (direct) transport:
 
 ```bash
-docker compose -f docker-compose.yml -f docker-compose.kaleido.yml down
+docker compose -f docker-compose.yml -f docker-compose.gateway.yml down
 docker compose up -d --build
 npm run seed
 ```
@@ -245,7 +245,7 @@ npm run seed
 | [docs/plan.md](docs/plan.md) | Phase plan, locked decisions, risk register |
 | [docs/use-cases.md](docs/use-cases.md) | End-to-end flows with sequence diagrams |
 | [docs/deliverables.md](docs/deliverables.md) | Phase-by-phase deliverables and "how to try it" guides |
-| [docs/kaleido-mock.md](docs/kaleido-mock.md) | Optional demo mode: a local mimic of Kaleido's ABI-gateway + async-receipt pattern in front of Besu |
+| [docs/chain-gateway.md](docs/chain-gateway.md) | Optional demo mode: a generic ABI-gateway + async-receipt pattern in front of Besu |
 
 ## Development Notes
 

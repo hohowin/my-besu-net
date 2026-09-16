@@ -28,7 +28,7 @@ This document is the single reference for end-to-end interaction flows.
 
 No external systems are involved - this is a fully local system (D-15, D-21, D-23).
 
-> **Post-MVP addendum (UC-07 below):** adds one more actor, `kaleido-mock`, an optional alternate transport for `ChainService`'s role — not part of the locked actor set above. See [kaleido-mock.md](kaleido-mock.md).
+> **Post-MVP addendum (UC-07 below):** adds one more actor, `chain-gateway`, an optional alternate transport for `ChainService`'s role — not part of the locked actor set above. See [chain-gateway.md](chain-gateway.md).
 
 ---
 
@@ -328,13 +328,13 @@ sequenceDiagram
 
 ---
 
-## UC-07 (Post-MVP Addendum): Anson Pays Beatrice via the Kaleido-Mimic Transport
+## UC-07 (Post-MVP Addendum): Anson Pays Beatrice via the Chain Gateway Transport
 
-> Not part of the locked MVP flows above (UC-01–UC-06) - added after Phase 4 closed, to demonstrate an alternate transport. See [kaleido-mock.md](kaleido-mock.md), [architecture.md](architecture.md) S14.
+> Not part of the locked MVP flows above (UC-01–UC-06) - added after Phase 4 closed, to demonstrate an alternate transport. See [chain-gateway.md](chain-gateway.md), [architecture.md](architecture.md) S14.
 
-**Goal:** Same outcome as UC-04 (balance moves, audit log records it) but routed through `kaleido-mock`'s generic ABI gateway with async submission + receipt polling, instead of `ChainService` signing and broadcasting directly.
+**Goal:** Same outcome as UC-04 (balance moves, audit log records it) but routed through `chain-gateway`'s generic ABI gateway with async submission + receipt polling, instead of `ChainService` signing and broadcasting directly.
 
-**Trigger:** Same as UC-04 - Anson enters an amount and clicks Send. The stack is running with the `docker-compose.kaleido.yml` override active (`CHAIN_TRANSPORT=kaleido`).
+**Trigger:** Same as UC-04 - Anson enters an amount and clicks Send. The stack is running with the `docker-compose.gateway.yml` override active (`CHAIN_TRANSPORT=gateway`).
 
 ```mermaid
 sequenceDiagram
@@ -342,8 +342,8 @@ sequenceDiagram
     participant FE as Frontend TransferDashboard
     participant API as API Layer
     participant TS as TransferService
-    participant Chain as KaleidoChainService
-    participant GW as kaleido-mock gateway
+    participant Chain as GatewayChainService
+    participant GW as chain-gateway
     participant Contracts as T-REX Contracts
     participant Audit as AuditLogRepository
     participant DB as SQLite transfers table
@@ -379,5 +379,5 @@ sequenceDiagram
 **Notes:**
 - Everything from `API Layer` down through `Audit`/`DB` is byte-for-byte the same code path as UC-04 - only `Chain`'s implementation and the new `GW` hop differ.
 - Observable difference: end-to-end latency is higher (~5s vs ~2-3s for UC-04), from the receipt-polling interval - this is the async-transport trade-off made visible, not a regression.
-- The compliance-rejection equivalent of UC-05 fails *faster* in this mode (~0.1s): the revert happens during `eth_estimateGas`, before `GW` ever broadcasts a transaction, so it returns a synchronous 400 with no receipt ever created - see `kaleido-mock.md` for why.
+- The compliance-rejection equivalent of UC-05 fails *faster* in this mode (~0.1s): the revert happens during `eth_estimateGas`, before `GW` ever broadcasts a transaction, so it returns a synchronous 400 with no receipt ever created - see `chain-gateway.md` for why.
 - Playwright coverage: the same `tests/happy-path-transfer.spec.ts` from UC-04 passes unmodified against this transport - no dedicated spec, since the point is that the test shouldn't need to know the difference.

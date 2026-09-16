@@ -1,0 +1,34 @@
+# Optional override demonstrating a platform-as-a-service-style architecture:
+# the application (frontend + backend-api) talks to a generic ABI-driven
+# REST gateway (chain-gateway) instead of backend-api holding keys and
+# talking to besu-rpc directly. Base docker-compose.yml is untouched and
+# still works on its own — this only adds to it.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.gateway.yml up -d --build
+#
+# See docs/chain-gateway.md for what this demonstrates and why.
+services:
+  chain-gateway:
+    build: ./chain-gateway
+    container_name: chain-gateway
+    depends_on:
+      - besu-rpc
+    env_file:
+      - ./.env.local
+    environment:
+      - BESU_RPC_URL=http://besu-rpc:8545
+      - DEPLOYED_ADDRESSES_PATH=/app/deployed-addresses.json
+    volumes:
+      - ./deployed-addresses.json:/app/deployed-addresses.json:ro
+    ports:
+      - "5001:5001"
+    networks:
+      - besu-net
+
+  backend-api:
+    environment:
+      - CHAIN_TRANSPORT=gateway
+      - CHAIN_GATEWAY_URL=http://chain-gateway:5001
+    depends_on:
+      - chain-gateway

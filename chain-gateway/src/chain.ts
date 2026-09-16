@@ -8,12 +8,13 @@ interface DeployedAddresses {
   token: string;
 }
 
-/// The mimic's key custody model matches how Kaleido actually works: your
-/// application never holds signing keys — the gateway/console does, and
-/// your app only ever sees addresses and REST calls. (This is a genuine
-/// architectural difference from backend-api's own ChainService, where the
-/// app process itself holds the keys — D-09. Here, custody has moved to
-/// this middleware, which is the point of the demo.)
+/// The key custody model matches how commercial blockchain
+/// platform-as-a-service gateways actually work: your application never
+/// holds signing keys — the gateway does, and your app only ever sees
+/// addresses and REST calls. (This is a genuine architectural difference
+/// from backend-api's own ChainService, where the app process itself
+/// holds the keys — D-09. Here, custody has moved to this middleware,
+/// which is the point of the demo.)
 export class ChainRegistry {
   private readonly provider: ethers.JsonRpcProvider;
   private readonly signers: Record<Identity, ethers.NonceManager>;
