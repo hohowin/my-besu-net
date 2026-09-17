@@ -2,6 +2,7 @@
   "name": "besu-digital-asset-demo",
   "version": "0.1.0",
   "private": true,
+  "license": "MIT",
   "description": "Phase 4 E2E tooling for besu-digital-asset-demo — Playwright specs live in tests/. Contracts, backend, and frontend are separate sub-projects with their own package.json (D-14).",
   "scripts": {
     "seed": "node scripts/seed.js",
